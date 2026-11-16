@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-payments}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-payments}
+      POSTGRES_DB: ${POSTGRES_DB:-payments}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-payments}"]
+      interval: 3s
+      retries: 20
+
+  api:
+    image: python:3.12-slim
+    command: >
+      python tools/settlement_api.py --ledger data/ledger.csv --host 0.0.0.0 --port 8080
+      --fail-rate ${API_FAIL_RATE:-0.05} --rate-limit ${API_RATE_LIMIT:-20}
+    volumes:
+      - ./tools:/app/tools:ro
+      - ./data:/app/data:ro
+    working_dir: /app
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8080/health')"]
+      interval: 3s
+      retries: 20
+
+  ingest:
+    build: .
+    profiles: ["job"]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-payments}:${POSTGRES_PASSWORD:-payments}@postgres:5432/${POSTGRES_DB:-payments}
+      API_URL: http://api:8080
+      PAGE_SIZE: ${PAGE_SIZE:-500}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:
