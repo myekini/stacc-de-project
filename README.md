@@ -122,3 +122,40 @@ A partner API failed and seven days of payments arrived late. Show how your plat
 The capstone requires a "## Walkthrough" section in this README linking a
 walkthrough of five minutes or less, and CI passing on the submitted commit.
 -->
+
+## Setup
+
+Needs Docker and Python 3.12.
+
+```bash
+python tools/generate_ledger.py --rows 100000 --out data   # create the ledger
+cp .env.example .env
+docker compose up -d --wait postgres api                   # PostgreSQL + mock settlement API
+docker compose --profile job run --rm --build ingest       # load every page into PostgreSQL
+pip install -r requirements.txt && pytest -q               # tests (DB tests need postgres up)
+```
+
+Design and trade-offs: [docs/design.md](docs/design.md).
+
+## Configuration
+
+All settings are environment variables (see `.env.example`), never hard-coded:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `DATABASE_URL` | required | PostgreSQL connection string |
+| `API_URL` | `http://localhost:8080` | Settlement API base URL |
+| `PAGE_SIZE` | `500` | Rows per request (API max 1000) |
+| `MAX_RETRIES` | `8` | Retries on 429/5xx before the run stops |
+| `BACKOFF_SECONDS` | `0.5` | Base for exponential backoff |
+
+## Safe reruns
+
+Each page is written in one transaction together with its cursor, and `raw_settlements.txn_id` is the primary key with `ON CONFLICT DO NOTHING`. A crash resumes from the saved cursor, and running the job twice leaves the row count unchanged:
+
+```bash
+docker compose --profile job run --rm ingest
+docker compose exec postgres psql -U payments -c "select count(*) from raw_settlements"   # same number after every run
+```
+
+Rows that fail schema checks go to `rejected_records` instead of being loaded.

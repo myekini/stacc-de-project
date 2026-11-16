@@ -22,7 +22,7 @@ Settings (`DATABASE_URL`, `API_URL`, `PAGE_SIZE`, `MAX_RETRIES`, `BACKOFF_SECOND
 ## Why a rerun adds no rows
 `txn_id` is the primary key and inserts ignore conflicts, so replaying any page is harmless. Rows and cursor commit together, so a crash never leaves the cursor ahead of the data (no gaps). The worst case is re-reading one page, which is ignored.
 
-## What can fail
+## Failure modes
 | Failure | Handling |
 |---|---|
 | API 503 / 429 / network error | Retry with exponential backoff (honour `Retry-After`), give up after `MAX_RETRIES`. The cursor stays on the last committed page, so the next run resumes. |
