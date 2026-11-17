@@ -159,3 +159,13 @@ docker compose exec postgres psql -U payments -c "select count(*) from raw_settl
 ```
 
 Rows that fail schema checks go to `rejected_records` instead of being loaded.
+
+## Warehouse (milestone 2)
+
+Star schema in [models/schema.sql](models/schema.sql): `fact_settlement` plus `dim_date`, `dim_merchant` (SCD Type 2), `dim_account`, `dim_status`, and the cumulative table `cum_merchant_activity`. See [docs/bus_matrix.md](docs/bus_matrix.md).
+
+```bash
+docker compose --profile job run --rm ingest python -m src.warehouse  # build dims, facts, cumulative
+```
+
+Optional `MERCHANT_PROFILES_CSV` (columns `merchant_id,merchant_name,category,risk_tier,effective_date`) feeds merchant history. Running the build again changes no rows.
