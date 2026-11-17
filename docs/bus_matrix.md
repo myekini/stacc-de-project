@@ -55,4 +55,4 @@
 ## Files
 - Tables: [`models/schema.sql`](../models/schema.sql)
 - Build code: [`src/warehouse.py`](../src/warehouse.py) (`python -m src.warehouse`)
-- Tests: [`tests/test_modeling.py`](../tests/test_warehouse.py)
+- Tests: [`tests/test_modeling.py`](../tests/test_modeling.py)
