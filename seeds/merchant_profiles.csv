@@ -1,0 +1,12 @@
+merchant_id,merchant_name,category,risk_tier,effective_date
+M00001,Lagos Fresh Foods,grocery,low,2024-01-01
+M00002,Naija Ride,transport,medium,2024-01-01
+M00003,Abuja Electronics,electronics,medium,2024-01-01
+M00004,Eko Pharmacy,health,low,2024-01-01
+M00005,Island Travel,travel,high,2024-01-01
+M00006,Kano Textiles,fashion,low,2024-01-01
+M00008,Ibadan Books,education,low,2024-01-01
+M00009,Port Harcourt Fuel,fuel,medium,2024-01-01
+M00002,Naija Ride,transport,high,2024-07-01
+M00005,Island Travel,travel,medium,2024-07-01
+M00009,Port Harcourt Energy,fuel,medium,2024-07-01

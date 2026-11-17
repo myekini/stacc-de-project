@@ -169,3 +169,24 @@ docker compose --profile job run --rm ingest python -m src.warehouse  # build di
 ```
 
 Optional `MERCHANT_PROFILES_CSV` (columns `merchant_id,merchant_name,category,risk_tier,effective_date`) feeds merchant history. Running the build again changes no rows.
+
+## Transform with dbt (milestone 3)
+
+dbt turns the raw tables into tested models. Project files: [dbt_project.yml](dbt_project.yml), [profiles.yml](profiles.yml) (reads `DBT_*` environment variables), [models/schema.yml](models/schema.yml) (sources and tests).
+
+| Layer | What | Where |
+|---|---|---|
+| Seed | Merchant profile feed (edit it to change a merchant) | `seeds/merchant_profiles.csv` |
+| Staging (views) | `stg_settlements`, `stg_merchant_profiles`, `stg_merchants` | `models/staging/` |
+| Snapshot (SCD Type 2) | `merchants_snapshot`: closes the old row and adds a new one when a merchant's name, category or risk tier changes | `snapshots/` |
+| Mart (incremental) | `fct_payments`: one row per payment, only new rows processed after the first run | `models/marts/` |
+| Extra tests | Singular SQL checks (positive amounts, mart equals staging) | `dbt_tests/` |
+
+```bash
+pip install -r requirements-dbt.txt
+export DBT_HOST=localhost DBT_USER=payments DBT_PASSWORD=payments DBT_DBNAME=payments   # defaults shown
+dbt build --profiles-dir .        # seed, run models, snapshot and run every test, in order
+dbt build --profiles-dir . --full-refresh --select fct_payments   # rebuild the mart from scratch
+```
+
+Run the ingestion job first, so `raw_settlements` exists. Tests: `pytest tests/test_dbt_acceptance.py`.

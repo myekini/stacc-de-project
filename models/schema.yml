@@ -1,0 +1,103 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Tables written by the ingestion job (milestone 1).
+    schema: "{{ var('raw_schema', 'public') }}"
+    tables:
+      - name: raw_settlements
+        columns:
+          - name: txn_id
+            data_tests: [unique, not_null]
+          - name: merchant_id
+            data_tests: [not_null]
+
+seeds:
+  - name: merchant_profiles
+    description: Merchant profile feed. Add a row with a later effective_date to change a merchant.
+    columns:
+      - name: merchant_id
+        data_tests: [not_null]
+      - name: effective_date
+        data_tests: [not_null]
+
+models:
+  - name: stg_settlements
+    description: Typed, renamed copy of raw_settlements.
+    columns:
+      - name: txn_id
+        data_tests: [unique, not_null]
+      - name: merchant_id
+        data_tests: [not_null]
+      - name: account_id
+        data_tests: [not_null]
+      - name: amount_minor
+        data_tests: [not_null]
+      - name: currency
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['NGN']
+      - name: status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['settled', 'reversed', 'pending']
+      - name: created_date
+        data_tests: [not_null]
+
+  - name: stg_merchant_profiles
+    description: Cleaned merchant profile feed.
+    columns:
+      - name: merchant_id
+        data_tests: [not_null]
+      - name: risk_tier
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['low', 'medium', 'high']
+
+  - name: stg_merchants
+    description: One row per merchant with current attributes.
+    columns:
+      - name: merchant_id
+        data_tests: [unique, not_null]
+      - name: risk_tier
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['low', 'medium', 'high', 'unrated']
+
+  - name: fct_payments
+    description: Incremental payments mart, one row per transaction.
+    columns:
+      - name: txn_id
+        data_tests: [unique, not_null]
+      - name: merchant_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_merchants')
+                field: merchant_id
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['settled', 'reversed', 'pending']
+      - name: amount_minor
+        data_tests: [not_null]
+      - name: net_amount_minor
+        data_tests: [not_null]
+
+snapshots:
+  - name: merchants_snapshot
+    description: SCD Type 2 history of merchant attributes.
+    columns:
+      - name: merchant_id
+        data_tests: [not_null]
+      - name: dbt_valid_from
+        data_tests: [not_null]

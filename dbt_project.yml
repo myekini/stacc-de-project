@@ -1,0 +1,27 @@
+name: payments
+version: "1.0.0"
+config-version: 2
+profile: payments
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+snapshot-paths: ["snapshots"]
+test-paths: ["dbt_tests"]        # dbt's SQL tests; tests/ is for pytest
+target-path: target
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  payments:
+    # models/schema.sql is the milestone 2 warehouse DDL, not a dbt model.
+    schema:
+      +enabled: false
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table
+
+seeds:
+  payments:
+    merchant_profiles:
+      +column_types:
+        effective_date: date

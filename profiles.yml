@@ -1,0 +1,13 @@
+# Connection settings come from environment variables. Run dbt with: dbt build --profiles-dir .
+payments:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('DBT_HOST', 'localhost') }}"
+      port: "{{ env_var('DBT_PORT', '5432') | as_number }}"
+      user: "{{ env_var('DBT_USER', 'payments') }}"
+      password: "{{ env_var('DBT_PASSWORD', 'payments') }}"
+      dbname: "{{ env_var('DBT_DBNAME', 'payments') }}"
+      schema: "{{ env_var('DBT_SCHEMA', 'analytics') }}"
+      threads: 4
