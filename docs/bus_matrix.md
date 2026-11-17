@@ -25,7 +25,7 @@
 
 `settled_date_key` is the same `dim_date` playing a second role. Currency stays on the fact as a degenerate attribute because it has no attributes of its own.
 
-## Which dimension keeps history
+## Slowly changing dimension: which dimension keeps history
 **`dim_merchant`, with SCD Type 2.** A merchant's category or risk tier changes over time, and a payment should be reported with the values that were true when it happened (for example, volume by risk tier at the time).
 
 - A change closes the old row (`valid_to` = change date, `is_current` = false) and opens a new one. A row is valid for `valid_from <= day < valid_to`.
@@ -55,4 +55,4 @@
 ## Files
 - Tables: [`models/schema.sql`](../models/schema.sql)
 - Build code: [`src/warehouse.py`](../src/warehouse.py) (`python -m src.warehouse`)
-- Tests: [`tests/test_warehouse.py`](../tests/test_warehouse.py)
+- Tests: [`tests/test_modeling.py`](../tests/test_warehouse.py)
